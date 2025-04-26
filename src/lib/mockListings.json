@@ -1,0 +1,6 @@
+[
+    { "title": "Modern 2-Bedroom Apartment", "location": "Downtown", "price": "$2200/mo", "image": "/propbg3.jpg" },
+    { "title": "Cozy 1-Bedroom Loft", "location": "Uptown", "price": "$1800/mo", "image": "/propbg5.jpg" },
+    { "title": "Luxury 3-Bedroom Condo", "location": "Suburbs", "price": "$3500/mo", "image": "/propbg7.jpg" }
+]
+  
