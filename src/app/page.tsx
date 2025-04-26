@@ -6,12 +6,25 @@ import { searchListings } from "@/lib/search";
 import { motion } from "framer-motion";
 import Image from "next/image";
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
   interface Window {
     webkitSpeechRecognition: any;
     SpeechRecognition: any;
   }
 }
+
+interface SpeechRecognitionEvent extends Event {
+  results: {
+    [index: number]: {
+      [index: number]: {
+        transcript: string;
+      };
+    };
+  };
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
 
 export default function Home() {
   const [query, setQuery] = useState("");
@@ -74,12 +87,23 @@ export default function Home() {
                 type="button"
                 onClick={() => {
                   if (typeof window !== "undefined") {
-                    const recognition =
-                      new window.webkitSpeechRecognition() ||
-                      new window.SpeechRecognition();
+                    const SpeechRecognitionClass =
+                      window.SpeechRecognition ||
+                      window.webkitSpeechRecognition;
+
+                    if (!SpeechRecognitionClass) {
+                      console.error(
+                        "Speech Recognition is not supported in this browser."
+                      );
+                      return;
+                    }
+
+                    const recognition = new SpeechRecognitionClass();
                     recognition.lang = "en-US";
                     recognition.start();
-                    recognition.onresult = function (event: any) {
+                    recognition.onresult = function (
+                      event: SpeechRecognitionEvent
+                    ) {
                       const transcript = event.results[0][0].transcript;
                       setQuery(transcript);
                       handleSearch(transcript);
