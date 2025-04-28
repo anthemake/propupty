@@ -35,15 +35,17 @@ interface Listing {
 }
 
 export default function MapWrapper({
-    selectedListings,
+    listings,
     allListings,
     setSelectedListings,
+    handleSearch, // 👈 ADD THIS
   }: {
-    selectedListings: any[];
+    listings: any[];
     allListings: any[];
     setSelectedListings: (listings: any[]) => void;
-  }) 
-   {
+    handleSearch: (query: string) => void; // 👈 ADD THIS
+  }) {
+  
   const [hoveredZoneIndex, setHoveredZoneIndex] = useState<number | null>(null);
   const [selectedZoneIndex, setSelectedZoneIndex] = useState<number | null>(null);
 
@@ -102,30 +104,42 @@ export default function MapWrapper({
               mouseover: () => setHoveredZoneIndex(idx),
               mouseout: () => setHoveredZoneIndex(null),
               click: () => {
-                setSelectedZoneIndex(idx);
                 const zoneName = richmondZones[idx].name;
-                const filtered = allListings.filter((l) => l.zone === zoneName);
-                setSelectedListings(filtered);
+                handleSearch('', zoneName);  // ✅ Correct! Fetch listings for this zone
               },
+              
+              
             }}
           />
         ))}
 
         {/* Markers */}
-        {selectedListings.map((listing, idx) => (
+        {listings.map((listing, idx) => (
+
   (listing.lat && listing.lng) ? (
     <Marker
       key={idx}
       position={[listing.lat, listing.lng]}
       icon={customMarker}
     >
-      <Popup>
-        <div style={{ textAlign: 'center' }}>
-          <img src={listing.image} alt={listing.title} style={{ width: '100px', height: '80px', objectFit: 'cover', borderRadius: '6px', marginBottom: '4px' }} />
-          <div style={{ fontWeight: 'bold', fontSize: '14px' }}>{listing.title}</div>
-          <div style={{ fontSize: '12px', color: '#666' }}>{listing.price}</div>
-        </div>
-      </Popup>
+<Popup>
+  <div className="text-center">
+    <img
+      src={listing.image}
+      alt={listing.title}
+      className="w-32 h-20 object-cover rounded-md mx-auto mb-2"
+    />
+    <h3 className="text-base font-semibold text-gray-800">{listing.title}</h3>
+    <p className="text-sm text-gray-500">{listing.price}</p>
+    <button
+      className="mt-2 text-xs text-blue-600 hover:underline"
+      onClick={() => alert('View details (future feature)')}
+    >
+      View Details →
+    </button>
+  </div>
+</Popup>
+
     </Marker>
   ) : null
 ))}

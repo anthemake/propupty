@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import "leaflet/dist/leaflet.css";
 import dynamic from "next/dynamic";
+import Pagination from "@/components/Pagination";
 
 
 
@@ -14,6 +15,11 @@ export default function Home() {
   const [markers, setMarkers] = useState<Listing[]>([]);
   const [selectedListings, setSelectedListings] = useState<Listing[]>([]);
   const [viewMode, setViewMode] = useState<"list" | "map">("list");
+  const [loading, setLoading] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+const itemsPerPage = 8; // or 8 or 10 depending on how many you want per page
+
+
 
   const MapWrapper = dynamic(() => import("@/components/MapWrapper"), { ssr: false });
 
@@ -32,20 +38,34 @@ export default function Home() {
     handleSearch("");  // 🛠 Automatically load all listings silently!
   }, []);
 
-  const handleSearch = async (q: string, zone?: string) => {
+  const handleSearch = async (q: string) => {
+    setLoading(true);
+  
     try {
       let url = "/api/listings";
-      if (zone) {
-        url += `?zone=${encodeURIComponent(zone)}`;
+  
+      if (q && q.trim() !== "") {
+        url += `?query=${encodeURIComponent(q.trim())}`;
       }
+  
       const res = await fetch(url);
       const data = await res.json();
+  
       setResults(data);
-      setSelectedListings(data); // Always update selected listings too
+      setSelectedListings(data); // 🛠 Update map markers too
     } catch (err) {
       console.error("Failed to fetch listings:", err);
+    } finally {
+      setLoading(false);
     }
   };
+  
+  const totalPages = Math.ceil(results.length / itemsPerPage);
+const paginatedResults = results.slice(
+  (currentPage - 1) * itemsPerPage,
+  currentPage * itemsPerPage
+);
+
 
   return (
     <main className="relative bg-gray-100">
@@ -98,6 +118,20 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Add this above your List vs Map toggle buttons */}
+<div className="flex flex-wrap justify-center gap-2 my-4">
+  {['Riverfront / Canal Walk District', 'Henrico Smart City', 'The Fan District', "Scott's Addition", 'West End'].map((zone) => (
+    <button
+      key={zone}
+      onClick={() => handleSearch('', zone)} // 🛠 use your zone search function
+      className="px-3 py-2 bg-gray-200 hover:bg-blue-500 hover:text-white rounded-lg text-sm transition"
+    >
+      {zone}
+    </button>
+  ))}
+</div>
+
+
       {/* View Switch */}
       <div className="flex justify-center mb-6">
         <button
@@ -119,38 +153,62 @@ export default function Home() {
         <h2 className="text-2xl font-bold text-center mb-8">Explore Listings</h2>
 
         {viewMode === "list" ? (
-          <div className="grid md:grid-cols-2 gap-6">
-            {selectedListings.length > 0 ? (
-              selectedListings.map((listing, idx) => (
-                <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5, delay: idx * 0.1 }}
-                  className="p-6 bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200"
-                >
-                  <h2 className="text-xl font-semibold mb-2">{listing.title}</h2>
-                  <p className="text-gray-600 mb-1">{listing.location}</p>
-                  <p className="text-sm text-gray-500">{listing.price}</p>
-                  <Image
-                    src={listing.image}
-                    alt={listing.title}
-                    width={600}
-                    height={400}
-                    className="w-full h-48 object-cover rounded-md mb-4"
-                  />
-                </motion.div>
-              ))
-            ) : (
-              <p className="text-center text-gray-500">No results yet.</p>
-            )}
-          </div>
-        ) : (
+  <div className="grid md:grid-cols-2 gap-6">
+    {loading ? (
+      <div className="flex justify-center items-center py-8">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{
+            repeat: Infinity,
+            duration: 1,
+            repeatType: "reverse",
+          }}
+          className="text-lg text-blue-800"
+        >
+          Searching...
+        </motion.div>
+      </div>
+    ) : paginatedResults.length > 0 ? (
+      paginatedResults.map((listing, idx) => (
+        <motion.div
+          key={idx}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: idx * 0.1 }}
+          className="p-6 bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200"
+        >
+          <h2 className="text-xl font-semibold mb-2">{listing.title}</h2>
+          <p className="text-gray-600 mb-1">{listing.location}</p>
+          <p className="text-sm text-gray-500">{listing.price}</p>
+          <Image
+            src={listing.image}
+            alt={listing.title}
+            width={600}
+            height={400}
+            className="w-full h-48 object-cover rounded-md mb-4"
+            style={{ objectFit: "cover" }}
+          />
+        </motion.div>
+      ))
+    ) : (
+      <p className="text-center text-gray-500">No results yet.</p>
+    )}
+
+    {/* 🛠 ADD Pagination Below the Grid */}
+    <Pagination
+      currentPage={currentPage}
+      totalPages={totalPages}
+      onPageChange={(page) => setCurrentPage(page)}
+    />
+  </div>
+) : (
           <div className="relative w-full h-[500px] rounded-lg overflow-visible">
 <MapWrapper
-  selectedListings={selectedListings}
+  listings={selectedListings}
   allListings={results}
   setSelectedListings={setSelectedListings}
+  handleSearch={handleSearch} // 👈 ADD THIS
 />
 
 
