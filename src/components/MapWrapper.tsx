@@ -103,10 +103,20 @@ export default function MapWrapper({
             eventHandlers={{
               mouseover: () => setHoveredZoneIndex(idx),
               mouseout: () => setHoveredZoneIndex(null),
-              click: () => {
-                const zoneName = richmondZones[idx].name;
-                handleSearch('', zoneName);  // ✅ Correct! Fetch listings for this zone
-              },
+              click: async () => {
+                setSelectedZoneIndex(idx);
+              
+                const zoneName = richmondZones[idx].name; // 🛠 define zoneName first!
+              
+                try {
+                  const res = await fetch(`/api/listings?zone=${encodeURIComponent(zoneName)}`);
+                  const data = await res.json();
+                  setSelectedListings(data);
+                } catch (error) {
+                  console.error('Failed to fetch listings for zone:', error);
+                }
+              }
+              
               
               
             }}
