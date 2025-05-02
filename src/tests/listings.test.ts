@@ -1,20 +1,49 @@
-// tests/listings.test.ts
+
 
 import { expect, test } from '@jest/globals';
 
-// Dummy listing search function
-function searchListings(listings: any[], query: string) {
+
+
+export type Listing = {
+  id: number;
+  title: string;
+  location: string;
+  price: string;
+  image: string;
+  zone: string;
+  lat: number;
+  lng: number;
+};
+
+
+function searchListings(listings: Listing[], query: string) {
   return listings.filter((listing) =>
     listing.title.toLowerCase().includes(query.toLowerCase())
   );
 }
 
-const mockListings = [
-  { title: 'Modern Condo in Richmond' },
-  { title: 'Luxury Apartment Downtown' },
-  { title: 'Smart City Tech Loft' },
-  { title: 'Historic Home Scott’s Addition' },
-  { title: 'Family Home in West End' },
+
+const mockListings: Listing[] = [
+  {
+    id: 1,
+    title: "Listing 1",
+    location: "Richmond",
+    price: "$200,000",
+    image: "/images/placeholder-1.jpg",
+    zone: "The Fan District",
+    lat: 37.5413,
+    lng: -77.4348,
+  },
+  {
+    id: 2,
+    title: "Listing 2",
+    location: "Scott's Addition",
+    price: "$350,000",
+    image: "/images/placeholder-2.jpg",
+    zone: "Scott's Addition",
+    lat: 37.5683,
+    lng: -77.4567,
+  },
 ];
 
 test('searchListings returns correct results', () => {

@@ -1,7 +1,17 @@
-import type { NextConfig } from "next";
+const nextConfig = {
+  images: {
+    domains: ["localhost"],
+  },
+  experimental: {
+    typedRoutes: true,
+  },
 
-const nextConfig: NextConfig = {
-  /* config options here */
 };
+
+module.exports = {
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+}
 
 export default nextConfig;

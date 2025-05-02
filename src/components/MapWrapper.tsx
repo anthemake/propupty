@@ -1,99 +1,89 @@
-'use client';
+"use client";
 
-import { MapContainer, TileLayer, Polygon, Marker, Popup, useMap } from 'react-leaflet';
-import { useState, useEffect, useRef  } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { richmondZones } from '@/lib/zones'; 
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
+import { useState, useEffect, useRef } from "react";
+import {
+  MapContainer,
+  TileLayer,
+  Polygon,
+  Marker,
+  Popup,
+  useMap,
+} from "react-leaflet";
+import { motion, AnimatePresence } from "framer-motion";
+import { richmondZones } from "@/lib/zones";
+import "leaflet/dist/leaflet.css";
+import { Icon } from "leaflet";
+import type { MapContainerProps } from "react-leaflet";
 
-// Custom Pin
-const customMarker = new L.Icon({
-  iconUrl: '/leaflet/blue-marker.png',
+import type { Listing } from "@/types/listing";
+
+type LatLngTuple = [number, number];
+
+const customMarker = new Icon({
+  iconUrl: "/leaflet/blue-marker.png",
   iconSize: [48, 48],
   iconAnchor: [20, 40],
   popupAnchor: [0, -40],
 });
 
-// Fix Leaflet missing default images
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: '/leaflet/marker-icon-2x.png',
-  iconUrl: '/leaflet/marker-icon.png',
-  shadowUrl: '/leaflet/marker-shadow.png',
-});
+interface MapWrapperProps {
+  listings: Listing[];
+  allListings: Listing[];
+  setSelectedListings: (listings: Listing[]) => void;
+  handleSearch?: (query: string) => Promise<void>;
+}
 
-interface Listing {
-  id: number;
-  title: string;
-  location: string;
-  price: string;
-  image: string;
-  zone: string;
-  lat: number;
-  lng: number;
+function MapEffects({
+  selectedZoneIndex,
+}: {
+  selectedZoneIndex: number | null;
+}) {
+  const map = useMap();
+  const hasFlown = useRef(false);
+
+  useEffect(() => {
+    if (selectedZoneIndex !== null && !hasFlown.current) {
+      const selectedZone = richmondZones[selectedZoneIndex];
+      const coords = selectedZone.center ?? [37.54, -77.436];
+      map.flyTo(coords as [number, number], 13, { duration: 1.5 });
+      hasFlown.current = true;
+    }
+  }, [selectedZoneIndex, map]);
+
+  return null;
 }
 
 export default function MapWrapper({
-    listings,
-    allListings,
-    setSelectedListings,
-    handleSearch, // 👈 ADD THIS
-  }: {
-    listings: any[];
-    allListings: any[];
-    setSelectedListings: (listings: any[]) => void;
-    handleSearch: (query: string) => void; // 👈 ADD THIS
-  }) {
-  
+  listings,
+  allListings,
+  setSelectedListings,
+}: MapWrapperProps) {
   const [hoveredZoneIndex, setHoveredZoneIndex] = useState<number | null>(null);
-  const [selectedZoneIndex, setSelectedZoneIndex] = useState<number | null>(null);
-
-  function MapEffects({ selectedZoneIndex }: { selectedZoneIndex: number | null }) {
-    const map = useMap();
-    const hasFlown = useRef(false);
-  
-    useEffect(() => {
-      if (selectedZoneIndex !== null && !hasFlown.current) {
-        const selectedZone = richmondZones[selectedZoneIndex];
-  
-        let center: [number, number];
-  
-        if (selectedZone.center) {
-          center = [selectedZone.center[0], selectedZone.center[1]];
-        } else {
-          const coords = selectedZone.coordinates;
-          const avgLat = coords.reduce((sum, c) => sum + c[0], 0) / coords.length;
-          const avgLng = coords.reduce((sum, c) => sum + c[1], 0) / coords.length;
-          center = [avgLat, avgLng];
-        }
-  
-        map.flyTo(center, 13, { duration: 1.5 });
-        hasFlown.current = true;  // 👈 Prevent flying again
-      }
-    }, [selectedZoneIndex, map]);
-  
-    return null;
-  }
+  const [selectedZoneIndex, setSelectedZoneIndex] = useState<number | null>(
+    null
+  );
 
   return (
     <div className="relative h-[500px] w-full rounded-lg overflow-hidden">
-      <MapContainer
-        center={[37.5407, -77.4360]}
-        zoom={12}
-        scrollWheelZoom={true}
-        className="h-full w-full"
-      >
+<MapContainer
+  {...({
+    center: [37.5407, -77.436],
+    zoom: 12,
+    scrollWheelZoom: true,
+  } as Partial<MapContainerProps>)}
+  className="h-full w-full"
+>
+
         <TileLayer
-          attribution='&copy; OpenStreetMap contributors'
+          // @ts-expect-error known typing bug in react-leaflet v5
+          attribution="&copy; OpenStreetMap contributors"
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {/* Polygons */}
         {richmondZones.map((zone, idx) => (
           <Polygon
             key={idx}
-            positions={zone.coordinates}
+            positions={zone.coordinates as [number, number][]}
             pathOptions={{
               color: zone.color,
               fillOpacity: hoveredZoneIndex === idx ? 0.7 : 0.5,
@@ -105,65 +95,71 @@ export default function MapWrapper({
               mouseout: () => setHoveredZoneIndex(null),
               click: async () => {
                 setSelectedZoneIndex(idx);
-              
-                const zoneName = richmondZones[idx].name; // 🛠 define zoneName first!
-              
-                try {
-                  const res = await fetch(`/api/listings?zone=${encodeURIComponent(zoneName)}`);
-                  const data = await res.json();
-                  setSelectedListings(data);
-                } catch (error) {
-                  console.error('Failed to fetch listings for zone:', error);
-                }
-              }
-              
-              
-              
+                const zoneName = zone.name;
+                const res = await fetch(
+                  `/api/listings?zone=${encodeURIComponent(zoneName)}`
+                );
+                const data = await res.json();
+                setSelectedListings(data);
+              },
             }}
           />
         ))}
 
-        {/* Markers */}
-        {listings.map((listing, idx) => (
+        {listings.map((listing, idx) =>
+          listing.lat && listing.lng ? (
+            <Marker
+              key={listing.id ?? idx}
+              position={[listing.lat, listing.lng] as LatLngTuple}
+              // @ts-expect-error icon prop missing from MarkerProps typing
+              icon={customMarker}
+            >
+              <Popup>
+                <div style={{ textAlign: "center" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={listing.image}
+                    alt={listing.title}
+                    style={{
+                      width: "100px",
+                      height: "80px",
+                      objectFit: "cover",
+                      borderRadius: "6px",
+                      marginBottom: "4px",
+                    }}
+                  />
+                  <div style={{ fontWeight: "bold", fontSize: "14px" }}>
+                    {listing.title}
+                  </div>
+                  <div style={{ fontSize: "12px", color: "#666" }}>
+                    {listing.price}
+                  </div>
+                  <a
+                    href={`/listing/${listing.id}`}
+                    style={{
+                      display: "inline-block",
+                      marginTop: "6px",
+                      padding: "6px 12px",
+                      background: "#1E40AF",
+                      color: "white",
+                      textDecoration: "none",
+                      borderRadius: "6px",
+                      fontSize: "12px",
+                    }}
+                  >
+                    View Details
+                  </a>
+                </div>
+              </Popup>
+            </Marker>
+          ) : null
+        )}
 
-  (listing.lat && listing.lng) ? (
-    <Marker
-      key={idx}
-      position={[listing.lat, listing.lng]}
-      icon={customMarker}
-    >
-<Popup>
-  <div className="text-center">
-    <img
-      src={listing.image}
-      alt={listing.title}
-      className="w-32 h-20 object-cover rounded-md mx-auto mb-2"
-    />
-    <h3 className="text-base font-semibold text-gray-800">{listing.title}</h3>
-    <p className="text-sm text-gray-500">{listing.price}</p>
-    <button
-      className="mt-2 text-xs text-blue-600 hover:underline"
-      onClick={() => alert('View details (future feature)')}
-    >
-      View Details →
-    </button>
-  </div>
-</Popup>
-
-    </Marker>
-  ) : null
-))}
-
-
-
-
-        {/* Zoom Effect */}
         {selectedZoneIndex !== null && (
           <MapEffects selectedZoneIndex={selectedZoneIndex} />
         )}
       </MapContainer>
 
-      {/* HUD Card */}
       <AnimatePresence>
         {selectedZoneIndex !== null && (
           <motion.div
@@ -181,7 +177,7 @@ export default function MapWrapper({
               <button
                 onClick={() => {
                   setSelectedZoneIndex(null);
-                  setSelectedListings(allListings); // 🛠 Reset to all
+                  setSelectedListings(allListings);
                 }}
                 className="text-gray-400 hover:text-gray-600 text-xl"
               >

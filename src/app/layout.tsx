@@ -13,8 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "PropUpTy",
-  description: "Property Searching For You ",
+  metadataBase: new URL("https://yourdomain.com"),
+  title: "HomeAI | Richmond Smart Listings",
+  description: "Explore AI-enhanced property listings in Richmond and beyond.",
 };
 
 export default function RootLayout({

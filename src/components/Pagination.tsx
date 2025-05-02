@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 
 export default function Pagination({
   currentPage,
@@ -26,8 +26,8 @@ export default function Pagination({
           onClick={() => onPageChange(page)}
           className={`px-3 py-1 rounded ${
             currentPage === page
-              ? 'bg-blue-600 text-white'
-              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+              ? "bg-blue-600 text-white"
+              : "bg-gray-200 text-gray-700 hover:bg-gray-300"
           }`}
         >
           {page}

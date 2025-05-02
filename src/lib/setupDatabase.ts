@@ -3,10 +3,10 @@ import { existsSync } from 'fs';
 
 const dbFile = 'src/lib/listings.db';
 
-// If the database file already exists, skip creating again
+
 if (existsSync(dbFile)) {
-  console.log('Database already exists. Skipping setup.');
-  process.exit(0);
+    console.log('Database already exists. Skipping setup.');
+    process.exit(0);
 }
 
 const db = new Database(dbFile);
