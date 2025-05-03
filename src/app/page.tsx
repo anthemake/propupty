@@ -8,9 +8,7 @@ import dynamic from "next/dynamic";
 import Pagination from "@/components/Pagination";
 import Link from "next/link";
 import Head from "next/head";
-import type { Route } from "next";
-import { arlingtonZones } from "@/lib/zonesGeo";
-
+import { MicrophoneIcon } from "@heroicons/react/24/outline";
 
 const MapWrapper = dynamic(() => import("@/components/MapWrapper"), {
   ssr: false,
@@ -27,6 +25,7 @@ export default function Home() {
   const [shrinkHero, setShrinkHero] = useState(false);
   const [activeZone, setActiveZone] = useState<string | null>(null);
   const exploreRef = useRef<HTMLDivElement | null>(null);
+  const [isSpeechSupported, setIsSpeechSupported] = useState(false);
 
   const itemsPerPage = 8;
 
@@ -43,6 +42,44 @@ export default function Home() {
 
   useEffect(() => {}, []);
 
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const supported =
+        "webkitSpeechRecognition" in window || "SpeechRecognition" in window;
+      setIsSpeechSupported(supported);
+      if (!supported) {
+        console.log("Speech Recognition not supported");
+      }
+    }
+  }, []);
+
+  const handleMicClick = () => {
+    const SpeechRecognition =
+      window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Speech recognition not supported in this browser.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "en-US";
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.start();
+
+    recognition.onresult = (event: SpeechRecognitionEvent) => {
+      const transcript = event.results[0][0].transcript;
+      setQuery(transcript);
+      handleSearch(transcript);
+    };
+
+    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+      console.error("Speech recognition error:", event.error);
+      alert("Speech recognition error: " + event.error);
+    };
+  };
+
   const handleSearch = async (q: string) => {
     setLoading(true);
     setActiveQuery(q);
@@ -50,13 +87,12 @@ export default function Home() {
     try {
       let url = "/api/listings";
       const params = new URLSearchParams();
-      
-      if (activeZone) params.append('zone', activeZone);
-      if (q && q.trim() !== "") params.append('query', q.trim());
-      
+
+      if (activeZone) params.append("zone", activeZone);
+      if (q && q.trim() !== "") params.append("query", q.trim());
+
       const queryString = params.toString();
       if (queryString) url += `?${queryString}`;
-      
 
       const res = await fetch(url);
       const data = await res.json();
@@ -126,8 +162,11 @@ export default function Home() {
   return (
     <main className="relative bg-gray-100">
       <Head>
-      <title>PropUpTy | Arlington Real Estate Listings</title>
-<meta name="description" content="Search and explore homes for sale and rent in Arlington's hottest neighborhoods." />
+        <title>PropUpTy | Arlington Real Estate Listings</title>
+        <meta
+          name="description"
+          content="Search and explore homes for sale and rent in Arlington's hottest neighborhoods."
+        />
 
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta property="og:title" content="PropUpTy | Arlington Real Estate" />
@@ -182,17 +221,34 @@ export default function Home() {
               <input
                 type="text"
                 value={query}
-                onChange={(e) => {
-                  setQuery(e.target.value);
-                }}
+                onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleSearch(query);
                 }}
                 placeholder="Place, Neighborhood, School or Agent"
-                className={`w-full bg-transparent placeholder-gray-400 px-4 py-3 focus:outline-none ${
+                className={`w-full bg-transparent placeholder-gray-400 px-4 py-3 pr-10 focus:outline-none ${
                   shrinkHero ? "text-gray-900" : "text-white"
                 }`}
               />
+
+              <button
+                onClick={handleMicClick}
+                disabled={!isSpeechSupported}
+                title={
+                  !isSpeechSupported
+                    ? "Not supported in this browser"
+                    : "Voice search"
+                }
+                className={`absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full ${
+                  shrinkHero ? "text-gray-800" : "text-white"
+                } ${
+                  !isSpeechSupported
+                    ? "opacity-40 cursor-not-allowed"
+                    : "hover:bg-gray-300/20"
+                }`}
+              >
+                <MicrophoneIcon className="h-5 w-5" />
+              </button>
             </div>
 
             <button
@@ -249,29 +305,38 @@ export default function Home() {
       </section>
 
       <div className="flex flex-wrap justify-center gap-2 my-4">
-      {["Dominion Hills", "Ballston", "Rosslyn", "Clarendon", "Pentagon City"].map((zone) => (
-  <button
-    key={zone}
-    onClick={() => {
-      if (activeZone === zone) {
-        handleZoneSelect(null);
- 
-      } else {
-        handleZoneSelect(zone);
-      }
-    }}
-  >
-    {zone}
-  </button>
-))}
-
+        {[
+          "Dominion Hills",
+          "Ballston",
+          "Rosslyn",
+          "Clarendon",
+          "Pentagon City",
+        ].map((zone) => (
+          <button
+            key={zone}
+            onClick={() => {
+              if (activeZone === zone) {
+                handleZoneSelect(null);
+              } else {
+                handleZoneSelect(zone);
+              }
+            }}
+            className={`rounded-md p-2 transition ${
+              activeZone === zone
+                ? "bg-blue-900 text-white"
+                : "bg-slate-200 text-gray-800 hover:bg-blue-800 hover:text-white"
+            }`}
+          >
+            {zone}
+          </button>
+        ))}
       </div>
 
       <div className="flex justify-center mb-6">
         <button
           onClick={() => setViewMode("list")}
           className={`px-4 py-2 rounded-l-lg ${
-            viewMode === "list" ? "bg-green-500 text-white" : "bg-gray-200"
+            viewMode === "list" ? "bg-teal-500 text-white" : "bg-gray-200"
           }`}
         >
           List View
@@ -279,7 +344,7 @@ export default function Home() {
         <button
           onClick={() => setViewMode("map")}
           className={`px-4 py-2 rounded-r-lg ${
-            viewMode === "map" ? "bg-green-500 text-white" : "bg-gray-200"
+            viewMode === "map" ? "bg-teal-500 text-white" : "bg-gray-200"
           }`}
         >
           Map View
@@ -326,10 +391,7 @@ export default function Home() {
                   transition={{ duration: 0.5, delay: idx * 0.1 }}
                   className="p-6 bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200"
                 >
-                  <Link
-                    href={`/listing/${listing.id}` as Route}
-                    className="block hover:opacity-90 transition"
-                  >
+                  <Link href={`/listing/${listing.id}`}>
                     <Image
                       src={listing.image}
                       alt={listing.title}
@@ -358,15 +420,13 @@ export default function Home() {
           </div>
         ) : (
           <div className="relative w-full h-[500px] rounded-lg overflow-hidden">
-<MapWrapper
-  listings={selectedListings}
-  allListings={results}
-  setSelectedListings={setSelectedListings}
-  handleSearch={handleSearch}
-  activeZone={activeZone} // ADD THIS
-/>
-
-
+            <MapWrapper
+              listings={selectedListings}
+              allListings={results}
+              setSelectedListings={setSelectedListings}
+              handleSearch={handleSearch}
+              activeZone={activeZone}
+            />
           </div>
         )}
       </section>

@@ -14,8 +14,10 @@ import { arlingtonZones } from "@/lib/zonesGeo";
 import "leaflet/dist/leaflet.css";
 import { Icon } from "leaflet";
 import type { MapContainerProps } from "react-leaflet";
-
+import type { Zone } from "@/types/zone";
 import type { Listing } from "@/types/listing";
+
+
 
 type LatLngTuple = [number, number];
 
@@ -31,10 +33,8 @@ interface MapWrapperProps {
   allListings: Listing[];
   setSelectedListings: (listings: Listing[]) => void;
   handleSearch?: (query: string) => Promise<void>;
-  activeZone: string | null; // ADD THIS
+  activeZone: string | null;
 }
-
-
 
 function MapEffects({
   selectedZoneIndex,
@@ -53,8 +53,6 @@ function MapEffects({
     }
   }, [selectedZoneIndex, map]);
 
-  
-
   return null;
 }
 
@@ -62,10 +60,9 @@ export default function MapWrapper({
   listings,
   allListings,
   setSelectedListings,
-  handleSearch,
-  activeZone // <-- add this
+  // handleSearch,
+  activeZone,
 }: MapWrapperProps) {
-
   const [hoveredZoneIndex, setHoveredZoneIndex] = useState<number | null>(null);
   const [selectedZoneIndex, setSelectedZoneIndex] = useState<number | null>(
     null
@@ -73,84 +70,76 @@ export default function MapWrapper({
 
   useEffect(() => {
     if (activeZone) {
-      const index = arlingtonZones.findIndex((z) => z.name === activeZone);
+      const index = arlingtonZones.findIndex(
+        (z: Zone) => z.name === activeZone
+      );
+
       setSelectedZoneIndex(index >= 0 ? index : null);
     } else {
       setSelectedZoneIndex(null);
     }
   }, [activeZone]);
-  
-  
-  
-  
 
   return (
     <div className="relative h-[500px] w-full rounded-lg overflow-hidden">
-<MapContainer
-  {...({
-    center: [38.8895, -77.0847], // (Dominion Hills as example)
-    zoom: 12,
-    scrollWheelZoom: true,
-  } as Partial<MapContainerProps>)}
-  className="h-full w-full"
->
-
+      <MapContainer
+        {...({
+          center: [38.8895, -77.0847],
+          zoom: 12,
+          scrollWheelZoom: true,
+        } as Partial<MapContainerProps>)}
+        className="h-full w-full"
+      >
         <TileLayer
           // @ts-expect-error known typing bug in react-leaflet v5
           attribution="&copy; OpenStreetMap contributors"
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-{arlingtonZones.map((zone, idx) => {
-  console.log("Zone:", zone.name, "Num polygons:", zone.coordinates.length, zone.coordinates);
+        {arlingtonZones.map((zone: Zone, idx: number) => {
+          function isMultiPolygon(
+            coords: [number, number][][] | [number, number][]
+          ): coords is [number, number][][] {
+            return Array.isArray(coords[0][0]);
+          }
 
-  return Array.isArray(zone.coordinates[0][0])
-    ? zone.coordinates.map((poly, idx2) => (
-        <Polygon
-          key={`${idx}-${idx2}`}
-          positions={poly as [number, number][]}
-          pathOptions={{
-            color: zone.color,
-            fillOpacity: hoveredZoneIndex === idx ? 0.7 : 0.5,
-            weight: hoveredZoneIndex === idx ? 5 : 2,
-            opacity: 1,
-          }}
-          eventHandlers={{
-            mouseover: () => setHoveredZoneIndex(idx),
-            mouseout: () => setHoveredZoneIndex(null),
-          }}
-        />
-      ))
-    : (
-      <Polygon
-        key={idx}
-        positions={zone.coordinates as [number, number][]}
-        pathOptions={{
-          color: zone.color,
-          fillOpacity: hoveredZoneIndex === idx ? 0.7 : 0.5,
-          weight: hoveredZoneIndex === idx ? 5 : 2,
-          opacity: 1,
-        }}
-        eventHandlers={{
-          mouseover: () => setHoveredZoneIndex(idx),
-          mouseout: () => setHoveredZoneIndex(null),
-          click: async () => {
-            setSelectedZoneIndex(idx);
-            const zoneName = zone.name;
-            console.log(`🖱️ Clicked polygon zone: ${zoneName}`, zone);
-
-            const res = await fetch(
-              `/api/listings?zone=${encodeURIComponent(zoneName)}`
+          if (isMultiPolygon(zone.coordinates)) {
+            return zone.coordinates.map((poly, idx2) => (
+              <Polygon
+                key={`${idx}-${idx2}`}
+                positions={poly}
+                pathOptions={{
+                  color: zone.color,
+                  fillOpacity: hoveredZoneIndex === idx ? 0.7 : 0.5,
+                  weight: hoveredZoneIndex === idx ? 5 : 2,
+                  opacity: 1,
+                }}
+                eventHandlers={{
+                  mouseover: () => setHoveredZoneIndex(idx),
+                  mouseout: () => setHoveredZoneIndex(null),
+                }}
+              />
+            ));
+          } else {
+           
+            return (
+              <Polygon
+                key={idx}
+                positions={zone.coordinates}
+                pathOptions={{
+                  color: zone.color,
+                  fillOpacity: hoveredZoneIndex === idx ? 0.7 : 0.5,
+                  weight: hoveredZoneIndex === idx ? 5 : 2,
+                  opacity: 1,
+                }}
+                eventHandlers={{
+                  mouseover: () => setHoveredZoneIndex(idx),
+                  mouseout: () => setHoveredZoneIndex(null),
+                }}
+              />
             );
-            const data = await res.json();
-            setSelectedListings(data);
-          },
-        }}
-      />
-    );
-})}
-
-
+          }
+        })}
 
         {listings.map((listing, idx) =>
           listing.lat && listing.lng ? (
@@ -217,9 +206,9 @@ export default function MapWrapper({
             className="absolute top-4 right-4 bg-white bg-opacity-90 p-4 rounded-lg shadow-md z-[1000] w-64"
           >
             <div className="flex justify-between items-center mb-2">
-            <h3 className="text-lg font-bold text-gray-800">
-  {arlingtonZones[selectedZoneIndex]?.name ?? "Unknown Zone"}
-</h3>
+              <h3 className="text-lg font-bold text-gray-800">
+                {arlingtonZones[selectedZoneIndex]?.name ?? "Unknown Zone"}
+              </h3>
 
               <button
                 onClick={() => {
@@ -232,7 +221,7 @@ export default function MapWrapper({
               </button>
             </div>
             <p className="text-gray-600 text-sm">
-              Simulated Drone Zone Coverage
+              Zone Coverage
             </p>
           </motion.div>
         )}

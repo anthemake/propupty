@@ -26,7 +26,7 @@ export async function GET(req: Request) {
   } else {
     listings = db.prepare('SELECT * FROM listings').all();
   }
-  
+
 
   interface Listing {
     id: number;
@@ -38,13 +38,13 @@ export async function GET(req: Request) {
     lat?: number;
     lng?: number;
   }
-  
+
   listings = (listings as Listing[]).map((listing) => ({
     ...listing,
     lat: listing.lat ?? 37.54 + Math.random() * 0.1,
     lng: listing.lng ?? -77.44 + Math.random() * 0.1,
   }));
-  
+
 
   return NextResponse.json(listings);
 }

@@ -10,6 +10,7 @@
     "seed": "tsx src/lib/seed.ts"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "better-sqlite3": "^11.9.1",
     "framer-motion": "^12.9.2",
     "leaflet": "^1.9.4",

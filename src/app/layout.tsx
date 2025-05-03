@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://yourdomain.com"),
-  title: "HomeAI | Richmond Smart Listings",
-  description: "Explore AI-enhanced property listings in Richmond and beyond.",
+  metadataBase: new URL("https://vercel.app/"),
+  title: "PropUpTy | Real Estate Smart Listings",
+  description: "Explore AI-enhanced property listings in Arlington and beyond.",
 };
 
 export default function RootLayout({
