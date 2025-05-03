@@ -10,7 +10,7 @@ import {
   useMap,
 } from "react-leaflet";
 import { motion, AnimatePresence } from "framer-motion";
-import { richmondZones } from "@/lib/zones";
+import { arlingtonZones } from "@/lib/zonesGeo";
 import "leaflet/dist/leaflet.css";
 import { Icon } from "leaflet";
 import type { MapContainerProps } from "react-leaflet";
@@ -31,7 +31,10 @@ interface MapWrapperProps {
   allListings: Listing[];
   setSelectedListings: (listings: Listing[]) => void;
   handleSearch?: (query: string) => Promise<void>;
+  activeZone: string | null; // ADD THIS
 }
+
+
 
 function MapEffects({
   selectedZoneIndex,
@@ -43,12 +46,14 @@ function MapEffects({
 
   useEffect(() => {
     if (selectedZoneIndex !== null && !hasFlown.current) {
-      const selectedZone = richmondZones[selectedZoneIndex];
+      const selectedZone = arlingtonZones[selectedZoneIndex];
       const coords = selectedZone.center ?? [37.54, -77.436];
       map.flyTo(coords as [number, number], 13, { duration: 1.5 });
       hasFlown.current = true;
     }
   }, [selectedZoneIndex, map]);
+
+  
 
   return null;
 }
@@ -57,17 +62,33 @@ export default function MapWrapper({
   listings,
   allListings,
   setSelectedListings,
+  handleSearch,
+  activeZone // <-- add this
 }: MapWrapperProps) {
+
   const [hoveredZoneIndex, setHoveredZoneIndex] = useState<number | null>(null);
   const [selectedZoneIndex, setSelectedZoneIndex] = useState<number | null>(
     null
   );
 
+  useEffect(() => {
+    if (activeZone) {
+      const index = arlingtonZones.findIndex((z) => z.name === activeZone);
+      setSelectedZoneIndex(index >= 0 ? index : null);
+    } else {
+      setSelectedZoneIndex(null);
+    }
+  }, [activeZone]);
+  
+  
+  
+  
+
   return (
     <div className="relative h-[500px] w-full rounded-lg overflow-hidden">
 <MapContainer
   {...({
-    center: [37.5407, -77.436],
+    center: [38.8895, -77.0847], // (Dominion Hills as example)
     zoom: 12,
     scrollWheelZoom: true,
   } as Partial<MapContainerProps>)}
@@ -80,31 +101,56 @@ export default function MapWrapper({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        {richmondZones.map((zone, idx) => (
-          <Polygon
-            key={idx}
-            positions={zone.coordinates as [number, number][]}
-            pathOptions={{
-              color: zone.color,
-              fillOpacity: hoveredZoneIndex === idx ? 0.7 : 0.5,
-              weight: hoveredZoneIndex === idx ? 5 : 2,
-              opacity: 1,
-            }}
-            eventHandlers={{
-              mouseover: () => setHoveredZoneIndex(idx),
-              mouseout: () => setHoveredZoneIndex(null),
-              click: async () => {
-                setSelectedZoneIndex(idx);
-                const zoneName = zone.name;
-                const res = await fetch(
-                  `/api/listings?zone=${encodeURIComponent(zoneName)}`
-                );
-                const data = await res.json();
-                setSelectedListings(data);
-              },
-            }}
-          />
-        ))}
+{arlingtonZones.map((zone, idx) => {
+  console.log("Zone:", zone.name, "Num polygons:", zone.coordinates.length, zone.coordinates);
+
+  return Array.isArray(zone.coordinates[0][0])
+    ? zone.coordinates.map((poly, idx2) => (
+        <Polygon
+          key={`${idx}-${idx2}`}
+          positions={poly as [number, number][]}
+          pathOptions={{
+            color: zone.color,
+            fillOpacity: hoveredZoneIndex === idx ? 0.7 : 0.5,
+            weight: hoveredZoneIndex === idx ? 5 : 2,
+            opacity: 1,
+          }}
+          eventHandlers={{
+            mouseover: () => setHoveredZoneIndex(idx),
+            mouseout: () => setHoveredZoneIndex(null),
+          }}
+        />
+      ))
+    : (
+      <Polygon
+        key={idx}
+        positions={zone.coordinates as [number, number][]}
+        pathOptions={{
+          color: zone.color,
+          fillOpacity: hoveredZoneIndex === idx ? 0.7 : 0.5,
+          weight: hoveredZoneIndex === idx ? 5 : 2,
+          opacity: 1,
+        }}
+        eventHandlers={{
+          mouseover: () => setHoveredZoneIndex(idx),
+          mouseout: () => setHoveredZoneIndex(null),
+          click: async () => {
+            setSelectedZoneIndex(idx);
+            const zoneName = zone.name;
+            console.log(`🖱️ Clicked polygon zone: ${zoneName}`, zone);
+
+            const res = await fetch(
+              `/api/listings?zone=${encodeURIComponent(zoneName)}`
+            );
+            const data = await res.json();
+            setSelectedListings(data);
+          },
+        }}
+      />
+    );
+})}
+
+
 
         {listings.map((listing, idx) =>
           listing.lat && listing.lng ? (
@@ -171,9 +217,10 @@ export default function MapWrapper({
             className="absolute top-4 right-4 bg-white bg-opacity-90 p-4 rounded-lg shadow-md z-[1000] w-64"
           >
             <div className="flex justify-between items-center mb-2">
-              <h3 className="text-lg font-bold text-gray-800">
-                {richmondZones[selectedZoneIndex].name}
-              </h3>
+            <h3 className="text-lg font-bold text-gray-800">
+  {arlingtonZones[selectedZoneIndex]?.name ?? "Unknown Zone"}
+</h3>
+
               <button
                 onClick={() => {
                   setSelectedZoneIndex(null);

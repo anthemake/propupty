@@ -47,7 +47,7 @@ export default async function ListingDetail({ params }: { params: { id: string }
           <p className="text-gray-800 text-lg font-semibold mb-4">{listing.price}</p>
           <p className="text-gray-700 mb-6">
             {/* Add real content if needed */}
-            This is a beautiful property located in the heart of Richmond, Virginia.
+            This is a beautiful property located in the heart of Arlington, Virginia.
           </p>
           <div className="flex gap-4">
             <Link href="/" className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300 text-sm">

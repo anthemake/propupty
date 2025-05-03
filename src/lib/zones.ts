@@ -11,7 +11,7 @@ export type Zone = {
 };
 
 
-export const richmondZones = [
+export const arlingtonZones = [
     {
         name: "Riverfront / Canal Walk District",
         color: "#3b82f6",

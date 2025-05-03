@@ -10,7 +10,7 @@ export default function Head() {
       <meta property="og:title" content="PropUpTy" />
       <meta
         property="og:description"
-        content="Explore listings in Richmond by smart zones, voice, and AI."
+        content="Explore listings in Arlington by smart zones, voice, and AI."
       />
       <meta property="og:image" content="/og-image.jpg" />
       <meta name="theme-color" content="#1e40af" />

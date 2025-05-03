@@ -1,86 +1,60 @@
-export const richmondZonesGeoJSON = {
-    type: "FeatureCollection",
-    features: [
-        {
-            type: "Feature",
-            properties: { name: "Riverfront District", color: "#3b82f6" },
-            geometry: {
-                type: "Polygon",
-                coordinates: [
-                    [
-                        [-77.4440, 37.5365],
-                        [-77.4370, 37.5365],
-                        [-77.4370, 37.5310],
-                        [-77.4440, 37.5310],
-                        [-77.4440, 37.5365]
-                    ]
-                ]
-            }
-        },
-        {
-            type: "Feature",
-            properties: { name: "Scott's Addition", color: "#f59e0b" },
-            geometry: {
-                type: "Polygon",
-                coordinates: [
-                    [
-                        [-77.4800, 37.5650],
-                        [-77.4700, 37.5650],
-                        [-77.4700, 37.5600],
-                        [-77.4800, 37.5600],
-                        [-77.4800, 37.5650]
-                    ]
-                ]
-            }
-        },
-        {
-            type: "Feature",
-            properties: { name: "Henrico Smart City", color: "#22c55e" },
-            geometry: {
-                type: "Polygon",
-                coordinates: [
-                    [
-                        [37.58, -77.32],
-                        [37.578, -77.30],
-                        [37.575, -77.295],
-                        [37.572, -77.305],
-                        [37.575, -77.32]
-                    ]
-                ]
-            }
-        },
-        {
-            type: "Feature",
-            properties: { name: "The Fan District", color: "#f59e0b" },
-            geometry: {
-                type: "Polygon",
-                coordinates: [
-                    [
-                        [37.552, -77.47],
-                        [37.55, -77.455],
-                        [37.543, -77.458],
-                        [37.545, -77.475],
-                        [37.548, -77.478]
-                    ]
-                ]
-            }
-        },
-        {
-            type: "Feature",
-            properties: { name: "West End", color: "#6366f1" },
-            geometry: {
-                type: "Polygon",
-                coordinates: [
-                    [
-                        [37.602, -77.63],
-                        [37.600, -77.60],
-                        [37.595, -77.59],
-                        [37.590, -77.60],
-                        [37.592, -77.625]
-                    ]
-                ]
-            }
-        },
+import arlingtonZonesJson from './arlingtonZones.json';
+console.log(arlingtonZonesJson.features.map(f => [f.properties.LABEL, f.properties.ZN_DESIG]));
 
-    ]
-};
+const TARGET_ZONES = ["Dominion Hills", "Ballston", "Rosslyn", "Clarendon", "Pentagon City"];
+
+
+
+// 🗺️ Mapping zone labels to your neighborhood names
+const ZONE_TO_NEIGHBORHOOD: Record<string, string> = {
+    "Apartment Dwelling District": "Ballston",
+    "Local Commercial District": "Clarendon",
+    "Service Commercial - Community Business Districts": "Rosslyn",
+    "Special District": "Pentagon City",
+    "Commercial Off. Bldg, Hotel and Multiple-Family Dwelling": "Rosslyn",
+    "One-Family Dwelling District": "Dominion Hills",
+    // Add more if needed
+  };
+  
+
+  const COLORS = ["#FF5733", "#FF5733", "#FF5733", "#FF5733", "#FF5733"];
+
+  function getCenterFromFeature(geometry: any): [number, number] {
+    const coords: number[][] =
+      geometry.type === "Polygon"
+        ? geometry.coordinates[0]
+        : geometry.coordinates.flat(2); // flatten all polygons into single array of [lng, lat]
+  
+    const lats = coords.map(([lng, lat]) => lat);
+    const lngs = coords.map(([lng, lat]) => lng);
+    const avgLat = lats.reduce((a, b) => a + b, 0) / lats.length;
+    const avgLng = lngs.reduce((a, b) => a + b, 0) / lngs.length;
+    return [avgLat, avgLng];
+  }
+  
+  export const arlingtonZones = arlingtonZonesJson.features
+//  .filter((feature) => {
+//    const mappedNeighborhood = ZONE_TO_NEIGHBORHOOD[feature.properties.LABEL];
+//    return mappedNeighborhood && TARGET_ZONES.includes(mappedNeighborhood);
+//  })
+  .map((feature) => {
+    const name = ZONE_TO_NEIGHBORHOOD[feature.properties.LABEL] || feature.properties.LABEL;
+    
+    console.log("🗺️ Found zone:", name);  // 🔥 ← log inside map!
+
+    return {
+      name,
+      color: "#FF5733",
+      coordinates:
+        feature.geometry.type === "Polygon"
+          ? [feature.geometry.coordinates[0].map(([lng, lat]: [number, number]) => [lat, lng])]
+          : feature.geometry.coordinates.map(
+              (polygon) => polygon[0].map(([lng, lat]: [number, number]) => [lat, lng])
+            ),
+      center: [
+        feature.geometry.coordinates[0][0][0][1],
+        feature.geometry.coordinates[0][0][0][0],
+      ],
+    };
+  });
+  console.log("✅ Final arlingtonZones names:", arlingtonZones.map(z => z.name));

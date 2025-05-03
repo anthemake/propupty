@@ -9,7 +9,7 @@ import Pagination from "@/components/Pagination";
 import Link from "next/link";
 import Head from "next/head";
 import type { Route } from "next";
-
+import { arlingtonZones } from "@/lib/zonesGeo";
 
 
 const MapWrapper = dynamic(() => import("@/components/MapWrapper"), {
@@ -49,9 +49,14 @@ export default function Home() {
 
     try {
       let url = "/api/listings";
-      if (q && q.trim() !== "") {
-        url += `?query=${encodeURIComponent(q.trim())}`;
-      }
+      const params = new URLSearchParams();
+      
+      if (activeZone) params.append('zone', activeZone);
+      if (q && q.trim() !== "") params.append('query', q.trim());
+      
+      const queryString = params.toString();
+      if (queryString) url += `?${queryString}`;
+      
 
       const res = await fetch(url);
       const data = await res.json();
@@ -121,13 +126,11 @@ export default function Home() {
   return (
     <main className="relative bg-gray-100">
       <Head>
-        <title>PropUpTy | Richmond Real Estate Listings</title>
-        <meta
-          name="description"
-          content="Search and explore homes for sale and rent in Richmond's hottest neighborhoods. Voice search, map filtering, and real-time listings."
-        />
+      <title>PropUpTy | Arlington Real Estate Listings</title>
+<meta name="description" content="Search and explore homes for sale and rent in Arlington's hottest neighborhoods." />
+
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <meta property="og:title" content="PropUpTy | Richmond Real Estate" />
+        <meta property="og:title" content="PropUpTy | Arlington Real Estate" />
         <meta
           property="og:description"
           content="Find the perfect home in Riverfront, The Fan, Scott's Addition and more."
@@ -246,30 +249,22 @@ export default function Home() {
       </section>
 
       <div className="flex flex-wrap justify-center gap-2 my-4">
-        {[
-          "Riverfront / Canal Walk District",
-          "Henrico Smart City",
-          "The Fan District",
-          "Scott's Addition",
-          "West End",
-        ].map((zone) => (
-          <button
-            key={zone}
-            type="button"
-            onClick={() =>
-              activeZone === zone
-                ? handleZoneSelect(null)
-                : handleZoneSelect(zone)
-            }
-            className={`px-3 py-2 rounded-lg text-sm transition ${
-              activeZone === zone
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 hover:bg-blue-500 hover:text-white"
-            }`}
-          >
-            {zone}
-          </button>
-        ))}
+      {["Dominion Hills", "Ballston", "Rosslyn", "Clarendon", "Pentagon City"].map((zone) => (
+  <button
+    key={zone}
+    onClick={() => {
+      if (activeZone === zone) {
+        handleZoneSelect(null);
+ 
+      } else {
+        handleZoneSelect(zone);
+      }
+    }}
+  >
+    {zone}
+  </button>
+))}
+
       </div>
 
       <div className="flex justify-center mb-6">
@@ -363,12 +358,15 @@ export default function Home() {
           </div>
         ) : (
           <div className="relative w-full h-[500px] rounded-lg overflow-hidden">
-            <MapWrapper
-              listings={selectedListings}
-              allListings={results}
-              setSelectedListings={setSelectedListings}
-              handleSearch={handleSearch}
-            />
+<MapWrapper
+  listings={selectedListings}
+  allListings={results}
+  setSelectedListings={setSelectedListings}
+  handleSearch={handleSearch}
+  activeZone={activeZone} // ADD THIS
+/>
+
+
           </div>
         )}
       </section>

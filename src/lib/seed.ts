@@ -5,33 +5,13 @@ const dbPath = path.join(process.cwd(), 'src', 'lib', 'listings.db');
 const db = new Database(dbPath);
 
 const zones = [
-    {
-        name: "Riverfront / Canal Walk District",
-        lat: 37.5375,
-        lng: -77.4375
-    },
-    {
-        name: "Henrico Smart City",
-        lat: 37.575,
-        lng: -77.31
-    },
-    {
-        name: "The Fan District",
-        lat: 37.547,
-        lng: -77.465
-    },
-    {
-        name: "Scott's Addition",
-        lat: 37.562,
-        lng: -77.470
-    },
-    {
-        name: "West End",
-        lat: 37.596,
-        lng: -77.612
-    }
-];
-
+    { name: "Dominion Hills",  lat: 38.883923, lng: -77.136283 },
+    { name: "Ballston", lat: 38.8826, lng: -77.1112 },
+    { name: "Rosslyn", lat: 38.8951, lng: -77.0703 },
+    { name: "Clarendon", lat: 38.8868, lng: -77.0961 },
+    { name: "Pentagon City", lat: 38.8626, lng: -77.0594 },
+  ];
+  
 
 db.exec(`DROP TABLE IF EXISTS listings`);
 
@@ -60,15 +40,29 @@ for (let i = 0; i < 30; i++) {
     const latOffset = (Math.random() - 0.5) * 0.01;
     const lngOffset = (Math.random() - 0.5) * 0.01;
 
+    const types = ["Condo", "Apartment", "Townhouse", "Studio", "Loft"];
+    const descs = [
+      "Modern and bright",
+      "Cozy and pet-friendly",
+      "Steps from metro",
+      "Great skyline views",
+      "Renovated interior",
+    ];
+    
+    const type = types[Math.floor(Math.random() * types.length)];
+    const desc = descs[Math.floor(Math.random() * descs.length)];
+    
     insert.run(
-        `Listing ${i + 1}`,
-        "Richmond, VA",
-        `$${Math.floor(Math.random() * 400 + 100)}k`,
-        `/placeholder-${(i % 5) + 1}.jpg`,
-        zone.name,
-        zone.lat + latOffset,
-        zone.lng + lngOffset
+      `${type} in ${zone.name}`,
+      `${desc}, Arlington, VA`,
+      `$${Math.floor(Math.random() * 400 + 100)}k`,
+      `/placeholder-${(i % 5) + 1}.jpg`,
+      zone.name,
+      zone.lat + latOffset,
+      zone.lng + lngOffset
     );
+    
+      
 }
 
 console.log('✅ Database reseeded with lat/lng!');

@@ -27,7 +27,7 @@ const mockListings: Listing[] = [
   {
     id: 1,
     title: "Listing 1",
-    location: "Richmond",
+    location: "Arlington",
     price: "$200,000",
     image: "/images/placeholder-1.jpg",
     zone: "The Fan District",
@@ -49,7 +49,7 @@ const mockListings: Listing[] = [
 test('searchListings returns correct results', () => {
   const results = searchListings(mockListings, 'Condo');
   expect(results.length).toBe(1);
-  expect(results[0].title).toBe('Modern Condo in Richmond');
+  expect(results[0].title).toBe('Modern Condo in Arlington');
 });
 
 test('searchListings handles no matches', () => {

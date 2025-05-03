@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import Database from 'better-sqlite3';
 import path from 'path';
 
+
 export async function GET(req: Request) {
   const dbPath = path.join(process.cwd(), 'src', 'lib', 'listings.db');
   const db = new Database(dbPath);
@@ -12,7 +13,11 @@ export async function GET(req: Request) {
 
   let listings;
 
-  if (zone) {
+  if (zone && query) {
+    listings = db
+      .prepare('SELECT * FROM listings WHERE zone = ? AND LOWER(title) LIKE ?')
+      .all(zone, `%${query.toLowerCase()}%`);
+  } else if (zone) {
     listings = db.prepare('SELECT * FROM listings WHERE zone = ?').all(zone);
   } else if (query) {
     listings = db
@@ -21,6 +26,7 @@ export async function GET(req: Request) {
   } else {
     listings = db.prepare('SELECT * FROM listings').all();
   }
+  
 
   interface Listing {
     id: number;
